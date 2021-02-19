@@ -1,0 +1,230 @@
+openapi: 3.0.0
+info:
+  title: Swagger Petstore
+  description: |
+    #### websocket 通訊 (非 request / response )
+    - 所有 send/get 資料都是 bytes 資料, 由 string 代表, 使用 maxLength 代表佔位, 每 1 長度代表 1 byte
+    - 資料開頭由 channel(uint8) + event id (uint16_ 組成，共 3 bytes
+      - uint8 (1 ~ 255) 為請求的 channel , 相同的 channel 同一時間只能發出一個 (0 為保留值，代表後端主動發出的)
+      - uint16 (1 ~ 65535) 為請求類型, 請參考下方 api 說明
+    - 參數名稱為(大寫)代表為 byte 資料，於「備註」說明佔位大小，以 byte:{strart}:{end}表示
+      - 例如開頭的 channel 為 1byte, 以 byte:0:1 表示， event id 為 byte:1:3
+    - 由於 js 無法直接讀取 bit 資料, 所以 boolean 也使用 1 byte 長度(0 or 1)
+  termsOfService: "http://swagger.io/terms/"
+  contact:
+    email: apiteam@swagger.io
+  license:
+    name: Apache 2.0
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+  version: 0.0.1
+externalDocs:
+  description: Find out more about Swagger
+  url: "http://swagger.io"
+
+servers:
+  - url: "https://api.project-host.net/v1"
+    description: 正式伺服器網址
+  - url: "http://demo.project-host.net/v1"
+    description: 測試伺服器網址
+tags:
+  - name: Init
+    description: 初始化
+  - name: Source
+    description: 資源下載
+paths:
+  /app/login:
+    post:
+      summary: 登入
+      tags:
+        - Init
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                loginType:
+                  type: string
+                  description: |
+                    #### 登入方式
+                    - app # 使用裝置 id 登入
+                    - mail # 使用 mail 
+                    - google # 使用 google 
+                    - facebook # 使用 facebook 
+                    - twitter # 使用 twitter
+                  enum:
+                    #### 登入方式
+                    - app # 使用裝置 id 登入
+                    - mail # 使用 mail
+                    - google # 使用 google
+                    - facebook # 使用 facebook
+                    - twitter # 使用 twitter
+                deviceUUID:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        200:
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessid:
+                    type: string
+                    description: session id
+                  id:
+                    type: number
+                    description: member id
+
+  /module/client-websocket/ws:
+    post:
+      summary: WebSocket 連線 (請使用 ws:// or wss://)
+      tags:
+        - Init
+      responses:
+        200:
+          description: ok
+  /sources/all:
+    get:
+      summary: 取得所有資源
+      tags:
+        - Source
+      responses:
+        200:
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  images:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SourceImage"
+                  stickers:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SourceSticker"
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SourceItem"
+                  skins:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SourceSkin"
+                  levels:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SourceLevel"
+                  ranks:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SourceRank"
+components:
+  schemas:
+    SourceImage:
+      type: object
+      properties:
+        id:
+          type: number
+        url:
+          type: string
+        title:
+          type: string
+          description: 圖片說明
+        numHeights:
+          type: number
+          description: 圖片高度分割數
+        numWidths:
+          type: number
+          description: 圖片寬度分割數
+    SourceSticker:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        imageId:
+          type: number
+          description: 圖片 id
+        defaultIndex:
+          type: number
+          description: 預設圖 index
+    SourceItem:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        imageId:
+          type: number
+          description: 圖片 id
+        imageIndex:
+          type: number
+          description: 圖片 index
+        transferable:
+          type: boolean
+          description: 是否可轉移
+        description:
+          type: string
+          description: 道具說明
+    SourceSkin:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          type: number
+          description: |
+            #### Skin 類型
+            - 1 # 頭像
+            - 2 # 外框
+            - 3 # 特效
+            - 4 # 背景
+          enum:
+            - 1 # 頭像
+            - 2 # 外框
+            - 3 # 特效
+            - 4 # 背景
+        name:
+          type: string
+          description: 名稱
+        imageId:
+          type: number
+          description: 圖片 id
+        imageIndex:
+          type: number
+          description: 圖片 index
+    SourceLevel:
+      type: object
+      properties:
+        id:
+          type: number
+        level:
+          type: number
+          description: 等級
+        experience:
+          type: number
+          description: 升到下一等級所需經驗值
+    SourceRank:
+      type: object
+      properties:
+        id:
+          type: number
+        rank:
+          type: string
+          description: 階級名稱
+        minimumLevel:
+          type: number
+          description: 最低套用等級
+        imageId:
+          type: number
+        imageIndex:
+          type: number
