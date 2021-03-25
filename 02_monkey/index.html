@@ -1,0 +1,56 @@
+﻿<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+	<style></style>
+</head>
+<body>
+	
+</body>
+</html>
+
+<script>
+
+	let An1 = "";
+
+	do 
+	{
+		l_An1 = prompt("請問星期六妳要怎麼去餐廳?\n A: 自已去 \n B: 我載妳去");
+
+		if (l_An1)
+		{
+			l_An1 = l_An1.toUpperCase();
+		}
+
+	} while (l_An1 !== "A" && l_An1 !== "B");
+
+	switch (l_An1)
+	{
+		case "A" :
+
+			let l_An1_A = "";
+
+			do
+			{
+				l_An1_A = prompt("請問妳要去的方式？\n A: 走路去 \n B: 開車過去");
+
+				if (l_An1_A)
+				{
+					l_An1_A = l_An1_A.toUpperCase();
+				}
+
+			} while (l_An1_A !== "A" && l_An1_A !== "B")
+
+			
+			break;
+
+		case "B" :
+
+			break;
+	}
+
+	alert("哦~原來如此, 不管妳的答案是什麼, 都是妳載我去");
+
+</script>
