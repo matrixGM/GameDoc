@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>幫主抽籤賽</title>
+    <style>
+
+        table, tr, td {
+			border: solid 1px;
+			border-collapse: collapse;
+		}
+
+        #Player
+        {
+            color: red;
+        }
+
+        .PlyerList
+        {
+            display: table;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .PlyerList div
+        {
+            display: table-cell;
+        }
+
+        .RoundResult, #Result
+        {
+            margin-top: 10px;
+            display: none;
+        }
+        table
+        {
+            width: 300px;
+        }
+
+        tr td:first-child
+        {
+            width: 50px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        #Bar div
+        {
+            width: 0px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="PlyerList">
+        <div>後選人名單: </div>
+        <div id="Player">熊, 魚, 猴, 碗, 腸, 象, 狗</div>
+    </div>
+
+    <div>
+        <table id="Bar">
+            <thead>
+                <tr><th colspan="2" id="TotalCount">統計結果</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <button onclick="AutoStart()">開始抽籤 (100次)</button>
+
+    <div id="Result"></div>
+</body>
+</html>
+
+<template id="Row">
+    <div class="RoundResult">
+        <table>
+            <thead>
+                <tr><th colspan="2">第N輪結果</th></tr>
+            </thead>
+            <tr><td>籤數</td><td></td></tr>
+            <tr><td>參加</td><td></td></tr>
+            <tr><td>淘汰</td><td></td></tr>
+            <tr><td>中籤</td><td></td></tr>
+        </table>
+    </div>
+</template>
+
+<script>
+
+    let l_Result        = document.getElementById("Result");
+    let l_RoundNo       = 1;
+    let l_TotalCount    = 0;
+
+    function GetColor()
+    {
+        let l_ColorStr = "#";
+    
+        let l_RandomColor = [ '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f' ];
+
+        for (let i = 0; i < 6; i++)
+        {
+            l_ColorStr += l_RandomColor[ Math.floor(Math.random() * l_RandomColor.length) ];
+        }
+
+        return l_ColorStr;
+    }
+
+    function InitBar()
+    {
+        let l_PlayerText    = document.getElementById("Player").innerText;
+        let l_PlayerList    = l_PlayerText.split(",");
+        let l_BarTable      = document.getElementById("Bar").getElementsByTagName("tbody")[0];
+
+        l_PlayerList.forEach(_ => {
+
+            let l_Row = l_BarTable.insertRow(0);
+
+            let l_CellName  = l_Row.insertCell(0);
+            let l_CellVal   = l_Row.insertCell(1);
+
+            l_CellName.innerText = _;
+            l_CellVal.innerHTML = "<div id='M_" + _ + "' style='background-color: " + GetColor() + ";'><div id='MV_" + _ + "' style='width: 200px;'>幫主: 0</div></div>";
+            l_CellVal.innerHTML += "<div id='S_" + _ + "' style='background-color: " + GetColor() + ";'><div id='SV_" + _ + "' style='width: 200px;'>總召: 0</div></div>";
+        });
+    }
+
+    function AutoStart()
+    {
+        let l_Btn = document.querySelector("button");
+        l_Btn.style.display = "none";
+
+        let l_Count = 100;
+
+        let l_Timer = setInterval(() => {
+
+            if (l_Count-- === 0)
+            {
+                clearInterval(l_Timer);
+                l_Btn.style.display = "";
+                return;
+            }
+
+            document.getElementById("TotalCount").innerText = "統計結果: " + ++l_TotalCount + "次";
+
+            Start();
+
+        }, 100);
+    }
+
+    function Start()
+    {
+        l_Result.innerHTML  = "";
+        let l_PlayerText    = document.getElementById("Player").innerText;
+        let l_PlayerList    = l_PlayerText.split(",");
+
+        l_RoundNo = 1;
+
+        Round1(l_PlayerList, []);
+    }
+
+    function Round1(a_PlayerList, a_In)
+    {
+        let l_Sign = [ "O", "O", "X" ];
+
+        let l_In    = a_In;
+        let l_Out   = [];
+
+        a_PlayerList.forEach(_ => {
+
+            let l_Random = Math.floor(Math.random() * l_Sign.length);
+            
+            l_Sign[ l_Random ] === "X" ? l_Out.push(_) : l_In.push(_);
+        });
+
+        let l_Note = "";
+
+        switch (l_In.length)
+        {
+            case 0 : l_Note = "例外: 沒抽出半位, 那再重複第一輪";
+            break;
+            case 1 : l_Note = "例外: 只有抽出一位, 那其他人再重複第一輪";
+            break;
+            case 2 : l_Note = "例外: 抽出兩位, 那就直接跳第三輪";
+                     l_RoundNo = 3;
+            break;
+
+            default : l_RoundNo = 2;
+            break;
+        }
+
+        WriteRound("一", a_PlayerList, l_Sign, l_In, l_Out, l_Note);
+        
+        switch (l_RoundNo)
+        {
+            case 1 : Round1(l_Out, l_In);
+            break;
+            case 2: Round2(l_In);
+            break;
+            case 3: RoundFinal(l_In);
+            break;
+        }
+    }
+
+    function Round2(a_PlayerList)
+    {
+        let l_Sign = ["O", "O"];
+
+        while (l_Sign.length < a_PlayerList.length)
+        {
+            l_Sign.push("X");
+        }
+
+        let l_WSign = l_Sign.join(",").split(",");
+
+        let l_In    = [];
+        let l_Out   = [];
+
+        a_PlayerList.forEach(_ => {
+
+            let l_Random = Math.floor(Math.random() * l_Sign.length);
+            
+            l_Sign[ l_Random ] === "X" ? l_Out.push(_) : l_In.push(_);
+
+            l_Sign.splice(l_Random, 1);
+        });
+
+        WriteRound("二", a_PlayerList, l_WSign, l_In, l_Out, "");
+
+        RoundFinal(l_In);
+    }
+
+    function RoundFinal(a_PlayerList)
+    {
+        let l_Sign = ["O", "X"];
+        let l_WSign = l_Sign.join(",").split(",");
+
+        let l_In    = [];
+        let l_Out   = [];
+
+        a_PlayerList.forEach(_ => {
+
+            let l_Random = Math.floor(Math.random() * l_Sign.length);
+            
+            //l_Sign[ l_Random ] === "X" ? l_Out.push(_) : l_In.push(_);
+
+            let l_Id    = [];
+            let l_Job   = "";
+
+            if (l_Sign[ l_Random ] === "X")
+            {
+                l_Out.push(_);
+                l_Id    = ["S_" + _, "SV_" + _];
+                l_Job   = "總召: ";
+            }
+            else
+            {
+                l_In.push(_);
+                l_Id    = ["M_" + _, "MV_" + _];
+                l_Job   = "幫主: ";
+            }
+
+            let l_ObjCol = document.getElementById(l_Id[0]);
+            let l_ObjVal = document.getElementById(l_Id[1]);
+
+            let l_Val = +l_ObjVal.innerText.split(": ")[1] + 1;
+            l_ObjVal.innerText     = l_Job + l_Val;
+            l_ObjCol.style.width   = l_Val + "px";
+
+            l_Sign.splice(l_Random, 1);
+        });
+
+        WriteRound("三", a_PlayerList, l_WSign, l_In, l_Out);
+    }
+
+    function WriteRound(a_RoundNo, a_PlayerList, a_Sign, a_In, a_Out, a_Note)
+    {
+        let l_TemplateRow = document.querySelector('#Row');
+
+        let l_th = l_TemplateRow.content.querySelectorAll("th");
+        l_th[0].textContent = "第" + a_RoundNo + "輪結果 " + a_Note;
+
+        let l_td = l_TemplateRow.content.querySelectorAll("td");
+
+        l_td[1].textContent = a_Sign.join(",");
+        l_td[3].textContent = a_PlayerList.join(",");
+        l_td[5].textContent = a_Out.join(",");
+        l_td[7].textContent = a_In.join(",");
+
+        l_td[4].textContent = "淘汰";
+        l_td[6].textContent = "中籤";
+
+        if (a_RoundNo === "三")
+        {
+            l_th[0].textContent = "最後結果";
+            l_td[4].textContent = "幫主";
+            l_td[6].textContent = "總召";
+        }
+
+        let l_Clone = document.importNode(l_TemplateRow.content, true);
+
+        let l_Result = document.getElementById("Result");
+        l_Result.appendChild(l_Clone);
+    }
+
+    InitBar();
+</script>
